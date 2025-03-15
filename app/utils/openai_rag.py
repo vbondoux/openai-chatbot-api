@@ -3,8 +3,11 @@ import os
 import logging
 from app.config import OPENAI_API_KEY, UPLOADS_DIR
 
-# Initialisation du client OpenAI
-client = openai.OpenAI(api_key=OPENAI_API_KEY)
+# Initialisation du client OpenAI en forçant l'API Assistants v2
+client = openai.OpenAI(
+    api_key=OPENAI_API_KEY,
+    default_headers={"OpenAI-Beta": "assistants=v2"}  # ✅ Activation explicite de l’API Assistants v2
+)
 
 # Configuration des logs
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -37,10 +40,11 @@ def upload_file_to_openai(filepath):
 
 def create_vector_store(name="Default Vector Store", description="Stockage des fichiers pour l'Assistant OpenAI"):
     """
-    Crée un Vector Store dans OpenAI.
+    Crée un Vector Store dans OpenAI Assistants API.
+    ✅ Correction : Utilisation de `client.vector_stores` au lieu de `client.beta.vector_stores`
     """
     try:
-        response = client.beta.vector_stores.create(
+        response = client.vector_stores.create(  # ✅ Correction ici
             name=name,
             description=description
         )
@@ -58,7 +62,7 @@ def add_file_to_vector_store(vector_store_id, file_id):
     try:
         logging.info(f"📎 Ajout du fichier {file_id} au Vector Store {vector_store_id}...")
 
-        client.beta.vector_stores.file_batches.create_and_poll(
+        client.vector_stores.file_batches.create_and_poll(  # ✅ Correction ici
             vector_store_id=vector_store_id,
             file_ids=[file_id]
         )
