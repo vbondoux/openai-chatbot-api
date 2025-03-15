@@ -30,3 +30,11 @@ GOOGLE_CREDENTIALS_PATH = credentials_path
 # Dossier pour stocker les fichiers téléchargés
 UPLOADS_DIR = "/app/uploads"
 os.makedirs(UPLOADS_DIR, exist_ok=True)
+
+# Charger l'ID de l'assistant stocké localement
+ASSISTANT_ID_FILE = "assistant_id.json"
+if os.path.exists(ASSISTANT_ID_FILE):
+    with open(ASSISTANT_ID_FILE, "r") as f:
+        OPENAI_ASSISTANT_ID = json.load(f).get("assistant_id")
+else:
+    OPENAI_ASSISTANT_ID = None
