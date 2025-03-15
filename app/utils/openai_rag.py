@@ -162,6 +162,7 @@ def list_vector_store_files(assistant_id):
     except Exception as e:
         logging.error(f"🚨 Erreur lors de la récupération des fichiers du Vector Store : {e}")
         raise RuntimeError(f"Erreur lors de la récupération des fichiers du Vector Store : {e}")
+        
 def remove_assistant(assistant_id):
     """
     Supprime un assistant OpenAI et ses ressources associées.
