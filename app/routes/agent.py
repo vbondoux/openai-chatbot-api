@@ -1,15 +1,37 @@
 import openai
+import json
+import os
 from fastapi import APIRouter, HTTPException
 from app.config import OPENAI_API_KEY
 
 router = APIRouter()
 
+# Fichier où stocker l'ID de l'assistant
+ASSISTANT_DATA_FILE = "assistant_data.json"
+
+def load_assistant_id():
+    """Charge l'ID de l'assistant depuis un fichier JSON."""
+    if os.path.exists(ASSISTANT_DATA_FILE):
+        with open(ASSISTANT_DATA_FILE, "r") as f:
+            data = json.load(f)
+            return data.get("assistant_id")
+    return None
+
+def save_assistant_id(assistant_id):
+    """Sauvegarde l'ID de l'assistant dans un fichier JSON."""
+    with open(ASSISTANT_DATA_FILE, "w") as f:
+        json.dump({"assistant_id": assistant_id}, f)
+
 @router.post("/create")
 def create_agent():
     """
-    Crée un agent OpenAI pour l'aide à la décision en bourse.
+    Crée un agent OpenAI pour l'aide à la décision en bourse, ou retourne l'ID s'il existe déjà.
     """
     try:
+        existing_assistant_id = load_assistant_id()
+        if existing_assistant_id:
+            return {"message": "Assistant déjà créé", "assistant_id": existing_assistant_id}
+
         client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
         instructions = """
@@ -35,6 +57,8 @@ def create_agent():
             model="gpt-4-turbo"
         )
 
-        return {"assistant_id": assistant.id}
+        save_assistant_id(assistant.id)  # Sauvegarde de l'ID
+        return {"message": "Assistant créé avec succès", "assistant_id": assistant.id}
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
