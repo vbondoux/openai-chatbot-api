@@ -1,7 +1,13 @@
 from fastapi import APIRouter, HTTPException
 import os
 from app.utils.google_drive import download_drive_file
-from app.utils.openai_rag import upload_file_to_openai, upload_and_attach_files_to_rag
+from app.utils.openai_rag import (
+    upload_file_to_openai, 
+    upload_and_attach_files_to_rag, 
+    list_assistants, 
+    list_vector_store_files, 
+    get_assistant_details
+)
 from app.routes.agent import load_assistant_id
 from pydantic import BaseModel
 from app.config import UPLOADS_DIR
@@ -55,10 +61,49 @@ def upload_local_files_to_openai():
         if not assistant_id:
             raise HTTPException(status_code=400, detail="L'assistant OpenAI n'a pas été créé.")
 
-        # ✅ Correction : Nouvelle approche avec Vector Store
         response = upload_and_attach_files_to_rag(assistant_id)
-
         return response
 
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/list_assistants/")
+def get_all_assistants():
+    """
+    Récupère la liste de tous les assistants OpenAI créés.
+    """
+    try:
+        assistants = list_assistants()
+        return {"assistants": assistants}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/list_vector_store_files/")
+def get_vector_store_files():
+    """
+    Récupère la liste des fichiers présents dans le Vector Store attaché à l'assistant OpenAI.
+    """
+    try:
+        assistant_id = load_assistant_id()
+        if not assistant_id:
+            raise HTTPException(status_code=400, detail="L'assistant OpenAI n'a pas été créé.")
+
+        files = list_vector_store_files(assistant_id)
+        return {"vector_store_files": files}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/assistant_details/")
+def get_assistant_info():
+    """
+    Récupère les détails de l'assistant OpenAI, y compris son Vector Store.
+    """
+    try:
+        assistant_id = load_assistant_id()
+        if not assistant_id:
+            raise HTTPException(status_code=400, detail="L'assistant OpenAI n'a pas été créé.")
+
+        assistant_details = get_assistant_details(assistant_id)
+        return {"assistant_details": assistant_details}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
