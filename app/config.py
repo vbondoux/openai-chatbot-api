@@ -2,39 +2,40 @@ import os
 import json
 from dotenv import load_dotenv
 
-# Charger .env en local
+# Charger les variables d'environnement
 load_dotenv()
 
-# Récupérer la clé API OpenAI
+# Clé API OpenAI
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
     raise ValueError("❌ OPENAI_API_KEY non définie ! Ajoute-la dans Railway Variables ou .env.")
 
-# Récupérer la clé API Google Drive (optionnel)
+# Clé API Google Drive (optionnel)
 GOOGLE_DRIVE_API_KEY = os.getenv("GOOGLE_DRIVE_API_KEY")
 
-# Récupérer le fichier JSON du compte de service
+# Chargement des credentials du compte de service Google
 GOOGLE_SERVICE_ACCOUNT_JSON = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
-
-# Vérifier si Railway stocke la clé JSON sous forme de texte et recréer le fichier credentials
-credentials_path = "google_credentials.json"
 if GOOGLE_SERVICE_ACCOUNT_JSON and GOOGLE_SERVICE_ACCOUNT_JSON.startswith("{"):
-    with open(credentials_path, "w") as f:
+    with open("google_credentials.json", "w") as f:
         f.write(GOOGLE_SERVICE_ACCOUNT_JSON)
-else:
-    credentials_path = GOOGLE_SERVICE_ACCOUNT_JSON  # Si c'est un chemin valide
+    GOOGLE_SERVICE_ACCOUNT_JSON = "google_credentials.json"
 
-# Exporter le bon chemin pour Google API
-GOOGLE_CREDENTIALS_PATH = credentials_path
+# Fichier pour stocker l'Assistant ID d'OpenAI
+ASSISTANT_FILE = "assistant.json"
 
-# Dossier pour stocker les fichiers téléchargés
-UPLOADS_DIR = "/app/uploads"
-os.makedirs(UPLOADS_DIR, exist_ok=True)
+def get_assistant_id():
+    """
+    Récupère l'assistant_id stocké localement, ou retourne None s'il n'existe pas.
+    """
+    if os.path.exists(ASSISTANT_FILE):
+        with open(ASSISTANT_FILE, "r") as f:
+            data = json.load(f)
+            return data.get("assistant_id")
+    return None
 
-# Charger l'ID de l'assistant stocké localement
-ASSISTANT_ID_FILE = "assistant_id.json"
-if os.path.exists(ASSISTANT_ID_FILE):
-    with open(ASSISTANT_ID_FILE, "r") as f:
-        OPENAI_ASSISTANT_ID = json.load(f).get("assistant_id")
-else:
-    OPENAI_ASSISTANT_ID = None
+def save_assistant_id(assistant_id):
+    """
+    Sauvegarde l'assistant_id dans un fichier JSON.
+    """
+    with open(ASSISTANT_FILE, "w") as f:
+        json.dump({"assistant_id": assistant_id}, f)
