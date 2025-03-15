@@ -142,14 +142,24 @@ def list_vector_store_files(assistant_id):
     """Récupère la liste des fichiers présents dans le Vector Store attaché à l'assistant."""
     try:
         assistant = get_assistant_details(assistant_id)
-        vector_store_ids = assistant.tool_resources["file_search"]["vector_store_ids"]
+        
+        # Assurer que l'assistant a bien l'outil `file_search`
+        if "file_search" not in [tool.type for tool in assistant.tools]:
+            raise RuntimeError(f"L'assistant {assistant_id} ne possède pas l'outil 'file_search'.")
+        
+        # Récupérer les vector stores associés à l'assistant
+        vector_store_ids = assistant.tool_resources.file_search.vector_store_ids
+
+        if not vector_store_ids:
+            return {"message": f"Aucun Vector Store trouvé pour l'assistant {assistant_id}."}
 
         all_files = []
         for vector_store_id in vector_store_ids:
             response = client.vector_stores.files.list(vector_store_id=vector_store_id)
             all_files.extend(response.data)
 
-        return [file.id for file in all_files]
+        return {"vector_store_files": [file.id for file in all_files]}
     except Exception as e:
         logging.error(f"🚨 Erreur lors de la récupération des fichiers du Vector Store : {e}")
         raise RuntimeError(f"Erreur lors de la récupération des fichiers du Vector Store : {e}")
+
