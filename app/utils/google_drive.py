@@ -3,9 +3,9 @@ from googleapiclient.http import MediaIoBaseDownload
 from google.oauth2 import service_account
 import io
 import os
-from app.config import GOOGLE_CREDENTIALS_PATH, UPLOADS_DIR
+from app.config import GOOGLE_CREDENTIALS_PATH  # Importer le bon chemin
 
-def download_drive_file(file_id, output_path=None):
+def download_drive_file(file_id, output_path):
     """
     Télécharge un fichier depuis Google Drive via son file_id.
     """
@@ -31,10 +31,6 @@ def download_drive_file(file_id, output_path=None):
     while not done:
         status, done = downloader.next_chunk()
         print(f"Téléchargement {int(status.progress() * 100)}%")
-
-    # Déterminer le chemin de sortie
-    if not output_path:
-        output_path = os.path.join(UPLOADS_DIR, f"{file_id}.pdf")
 
     # Sauvegarder le fichier en local
     with open(output_path, "wb") as f:
