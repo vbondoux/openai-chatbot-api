@@ -5,9 +5,9 @@ import io
 import os
 from app.config import GOOGLE_CREDENTIALS_PATH, UPLOADS_DIR
 
-def download_drive_file(file_id):
+def download_drive_file(file_id, output_path=None):
     """
-    Télécharge un fichier depuis Google Drive via son file_id et conserve son nom d'origine.
+    Télécharge un fichier depuis Google Drive via son file_id.
     """
     # Vérifier si les credentials existent
     if not GOOGLE_CREDENTIALS_PATH or not os.path.exists(GOOGLE_CREDENTIALS_PATH):
@@ -22,10 +22,6 @@ def download_drive_file(file_id):
     # Construire le service Google Drive
     service = build("drive", "v3", credentials=creds)
 
-    # Obtenir le nom du fichier
-    file_metadata = service.files().get(fileId=file_id).execute()
-    filename = file_metadata.get("name", f"{file_id}.pdf")  # Fallback au file_id si aucun nom n'est trouvé
-
     # Récupérer le fichier
     request = service.files().get_media(fileId=file_id)
     file = io.BytesIO()
@@ -36,9 +32,12 @@ def download_drive_file(file_id):
         status, done = downloader.next_chunk()
         print(f"Téléchargement {int(status.progress() * 100)}%")
 
-    # Sauvegarder le fichier dans UPLOADS_DIR
-    output_path = os.path.join(UPLOADS_DIR, filename)
+    # Déterminer le chemin de sortie
+    if not output_path:
+        output_path = os.path.join(UPLOADS_DIR, f"{file_id}.pdf")
+
+    # Sauvegarder le fichier en local
     with open(output_path, "wb") as f:
         f.write(file.getvalue())
 
-    return output_path, filename
+    return output_path
