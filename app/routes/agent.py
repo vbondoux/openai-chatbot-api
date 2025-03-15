@@ -20,10 +20,10 @@ def load_assistant_id():
             return json.load(f).get("assistant_id")
     return None
 
-@router.post("/agent/create/")
-def create_agent():
+@router.post("/agent/create")
+def create_openai_agent():
     """
-    Crée un agent OpenAI pour l'aide à la décision en bourse.
+    Crée un assistant OpenAI et stocke son assistant_id.
     Si un assistant existe déjà, il est réutilisé.
     """
     try:
