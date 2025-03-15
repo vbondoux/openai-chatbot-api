@@ -3,14 +3,19 @@ from googleapiclient.http import MediaIoBaseDownload
 from google.oauth2 import service_account
 import io
 import os
+from app.config import GOOGLE_CREDENTIALS_PATH  # Importer le bon chemin
 
 def download_drive_file(file_id, output_path):
     """
     Télécharge un fichier depuis Google Drive via son file_id.
     """
+    # Vérifier si les credentials existent
+    if not GOOGLE_CREDENTIALS_PATH or not os.path.exists(GOOGLE_CREDENTIALS_PATH):
+        raise FileNotFoundError(f"❌ Fichier credentials introuvable : {GOOGLE_CREDENTIALS_PATH}")
+
     # Charger les credentials
     creds = service_account.Credentials.from_service_account_file(
-        os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON"),
+        GOOGLE_CREDENTIALS_PATH,
         scopes=["https://www.googleapis.com/auth/drive.readonly"],
     )
 
