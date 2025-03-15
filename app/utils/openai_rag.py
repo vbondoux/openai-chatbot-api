@@ -26,17 +26,21 @@ def attach_files_to_assistant(assistant_id, file_ids):
     client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
     try:
-        # Récupérer les fichiers existants pour éviter d'écraser ceux déjà attachés
-        assistant = client.beta.assistants.retrieve(assistant_id)
-        existing_files = [f.id for f in assistant.files] if assistant.files else []
+        # ✅ Utiliser list_files pour récupérer les fichiers déjà attachés
+        existing_files_response = client.beta.assistants.files.list(assistant_id=assistant_id)
+        existing_files = [f.id for f in existing_files_response.data]
 
         # Fusionner les fichiers existants avec les nouveaux
         updated_files = list(set(existing_files + file_ids))
 
-        response = client.beta.assistants.update(
-            assistant_id=assistant_id,
-            file_ids=updated_files
-        )
+        # ✅ Ajouter les fichiers à l’assistant en plusieurs requêtes si nécessaire
+        for file_id in file_ids:
+            if file_id not in existing_files:
+                client.beta.assistants.files.create(
+                    assistant_id=assistant_id,
+                    file_id=file_id
+                )
+
         return {"message": "Fichiers attachés à l'assistant.", "file_ids": updated_files}
     except Exception as e:
         raise RuntimeError(f"Erreur lors de l'attachement des fichiers à l'assistant : {e}")
