@@ -6,7 +6,8 @@ from app.utils.openai_rag import (
     upload_and_attach_files_to_rag, 
     list_assistants, 
     list_vector_store_files, 
-    get_assistant_details
+    get_assistant_details,
+    remove_assistant
 )
 from app.routes.agent import load_assistant_id
 from pydantic import BaseModel
