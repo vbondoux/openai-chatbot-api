@@ -40,6 +40,12 @@ def create_vector_store(name="Default Vector Store", description="Stockage des f
     Crée un Vector Store dans OpenAI.
     """
     try:
+        # Vérifier si l'attribut vector_stores est présent
+        logging.info(f"📡 Vérification des attributs de client.beta : {dir(client.beta)}")
+
+        if not hasattr(client.beta, "vector_stores"):
+            raise AttributeError("❌ L'attribut 'vector_stores' n'existe pas sur client.beta. Vérifie l'API OpenAI.")
+
         response = client.beta.vector_stores.create(
             name=name,
             description=description
@@ -57,7 +63,10 @@ def add_file_to_vector_store(vector_store_id, file_id):
     """
     try:
         logging.info(f"📎 Ajout du fichier {file_id} au Vector Store {vector_store_id}...")
-        
+
+        if not hasattr(client.beta, "vector_stores"):
+            raise AttributeError("❌ L'attribut 'vector_stores' n'existe pas sur client.beta.")
+
         client.beta.vector_stores.file_batches.create_and_poll(
             vector_store_id=vector_store_id,
             file_ids=[file_id]
