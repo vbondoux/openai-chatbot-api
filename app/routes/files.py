@@ -1,129 +1,64 @@
-import openai
+from fastapi import APIRouter, HTTPException
 import os
-import logging
-from app.config import OPENAI_API_KEY, UPLOADS_DIR
+from app.utils.google_drive import download_drive_file
+from app.utils.openai_rag import upload_file_to_openai, upload_and_attach_files_to_assistant
+from app.routes.agent import load_assistant_id
+from pydantic import BaseModel
+from app.config import UPLOADS_DIR
 
-# Initialisation du client OpenAI en forçant l'API Assistants v2
-client = openai.OpenAI(
-    api_key=OPENAI_API_KEY,
-    default_headers={"OpenAI-Beta": "assistants=v2"}  # ✅ Activation explicite de l’API Assistants v2
-)
+router = APIRouter()
 
-# Configuration des logs
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+# Définition du modèle pour le body JSON
+class DriveFileRequest(BaseModel):
+    file_id: str
 
-def upload_file_to_openai(filepath):
+@router.post("/download_drive_file/")
+def download_google_drive_file(request: DriveFileRequest):
     """
-    Upload un fichier stocké localement vers OpenAI Assistants API.
-    Retourne l'ID du fichier stocké dans OpenAI.
-    """
-    try:
-        logging.info(f"📤 Début de l'upload du fichier : {filepath}")
-
-        if not os.path.exists(filepath):
-            logging.error(f"❌ Le fichier {filepath} n'existe pas !")
-            raise FileNotFoundError(f"Le fichier {filepath} est introuvable.")
-
-        with open(filepath, "rb") as file:
-            response = client.files.create(
-                file=file,
-                purpose="assistants"
-            )
-
-        file_id = response.id
-        logging.info(f"✅ Fichier uploadé avec succès ! ID OpenAI : {file_id}")
-
-        return file_id
-    except Exception as e:
-        logging.error(f"🚨 Erreur lors de l'upload du fichier vers OpenAI : {e}")
-        raise RuntimeError(f"Erreur lors de l'upload du fichier vers OpenAI : {e}")
-
-def create_vector_store(name="Default Vector Store", description="Stockage des fichiers pour l'Assistant OpenAI"):
-    """
-    Crée un Vector Store dans OpenAI Assistants API.
-    ✅ Correction : Utilisation de `client.vector_stores` au lieu de `client.beta.vector_stores`
+    Télécharge un fichier depuis Google Drive et retourne son nom d'origine et son chemin.
     """
     try:
-        response = client.vector_stores.create(  # ✅ Correction ici
-            name=name,
-            description=description
-        )
-        vector_store_id = response.id
-        logging.info(f"✅ Vector Store créé avec succès ! ID : {vector_store_id}")
-        return vector_store_id
+        file_path, filename = download_drive_file(request.file_id)
+        return {"message": "Fichier téléchargé avec succès", "file_name": filename, "file_path": file_path}
     except Exception as e:
-        logging.error(f"🚨 Erreur lors de la création du Vector Store : {e}")
-        raise RuntimeError(f"Erreur lors de la création du Vector Store : {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-def add_file_to_vector_store(vector_store_id, file_id):
+@router.post("/upload_from_drive/")
+def upload_google_drive_file(request: DriveFileRequest):
     """
-    Ajoute un fichier à un Vector Store OpenAI.
+    Télécharge un fichier depuis Google Drive et retourne son nom d'origine et son chemin.
     """
     try:
-        logging.info(f"📎 Ajout du fichier {file_id} au Vector Store {vector_store_id}...")
-
-        client.vector_stores.file_batches.create_and_poll(  # ✅ Correction ici
-            vector_store_id=vector_store_id,
-            file_ids=[file_id]
-        )
-        logging.info(f"✅ Fichier {file_id} ajouté au Vector Store {vector_store_id}")
+        file_path, filename = download_drive_file(request.file_id)
+        return {"message": "Fichier téléchargé avec succès", "file_name": filename, "file_path": file_path}
     except Exception as e:
-        logging.error(f"🚨 Erreur lors de l'ajout du fichier au Vector Store : {e}")
-        raise RuntimeError(f"Erreur lors de l'ajout du fichier au Vector Store : {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-def update_assistant_with_vector_store(assistant_id, vector_store_id):
+@router.get("/list_rag_files/")
+def list_rag_files():
     """
-    Associe un Vector Store à un assistant OpenAI.
+    Liste les fichiers disponibles dans la RAG.
     """
     try:
-        logging.info(f"🔗 Association du Vector Store {vector_store_id} avec l'assistant {assistant_id}...")
-
-        client.beta.assistants.update(
-            assistant_id=assistant_id,
-            tool_resources={
-                "file_search": {
-                    "vector_store_ids": [vector_store_id]
-                }
-            }
-        )
-
-        logging.info(f"✅ L'assistant {assistant_id} est maintenant lié au Vector Store {vector_store_id}.")
+        files = [f for f in os.listdir(UPLOADS_DIR) if os.path.isfile(os.path.join(UPLOADS_DIR, f))]
+        return {"rag_files": files}
     except Exception as e:
-        logging.error(f"🚨 Erreur lors de la mise à jour de l'assistant avec le Vector Store : {e}")
-        raise RuntimeError(f"Erreur lors de la mise à jour de l'assistant avec le Vector Store : {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-def upload_and_attach_files_to_rag(assistant_id):
+@router.post("/upload_to_rag/")
+def upload_local_files_to_openai():
     """
-    Upload tous les fichiers stockés localement dans /uploads vers OpenAI Assistants API et les attache à l'assistant via un Vector Store.
+    Upload tous les fichiers stockés localement dans /uploads vers OpenAI Assistants API et les associe à l'assistant.
     """
     try:
-        logging.info(f"📂 Parcours du dossier des fichiers à envoyer : {UPLOADS_DIR}")
+        assistant_id = load_assistant_id()
+        if not assistant_id:
+            raise HTTPException(status_code=400, detail="L'assistant OpenAI n'a pas été créé.")
 
-        if not os.path.exists(UPLOADS_DIR):
-            logging.error(f"❌ Dossier {UPLOADS_DIR} introuvable !")
-            raise FileNotFoundError(f"Le dossier {UPLOADS_DIR} est introuvable.")
+        # ✅ Nouvelle approche : on envoie tout à OpenAI en une seule fonction
+        response = upload_and_attach_files_to_assistant(assistant_id)
 
-        file_ids = []
-        for filename in os.listdir(UPLOADS_DIR):
-            file_path = os.path.join(UPLOADS_DIR, filename)
-            logging.info(f"📤 Upload du fichier : {file_path}")
-            file_id = upload_file_to_openai(file_path)
-            file_ids.append(file_id)
+        return response
 
-        if not file_ids:
-            logging.warning("⚠️ Aucun fichier trouvé à uploader.")
-            return {"message": "Aucun fichier trouvé dans le dossier uploads."}
-
-        # Création du Vector Store et ajout des fichiers
-        vector_store_id = create_vector_store()
-        for file_id in file_ids:
-            add_file_to_vector_store(vector_store_id, file_id)
-
-        # Mise à jour de l'assistant avec le Vector Store
-        update_assistant_with_vector_store(assistant_id, vector_store_id)
-
-        logging.info(f"✅ Tous les fichiers ont été ajoutés et attachés avec succès !")
-        return {"message": "Fichiers ajoutés et attachés avec succès.", "vector_store_id": vector_store_id}
     except Exception as e:
-        logging.error(f"🚨 Erreur lors du processus d'upload et d'attachement des fichiers : {e}")
-        raise RuntimeError(f"Erreur lors du processus d'upload et d'attachement des fichiers : {e}")
+        raise HTTPException(status_code=500, detail=str(e))
