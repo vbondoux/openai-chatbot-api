@@ -18,6 +18,7 @@ def upload_file_to_openai(filepath):
         return response.id  # OpenAI renvoie un file_id
     except Exception as e:
         raise RuntimeError(f"Erreur lors de l'upload du fichier vers OpenAI : {e}")
+
 def attach_files_to_assistant(assistant_id, file_ids):
     """
     Associe une liste de fichiers (file_ids) à un assistant OpenAI.
@@ -25,10 +26,11 @@ def attach_files_to_assistant(assistant_id, file_ids):
     client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
     try:
-        response = client.beta.assistants.update(
-            assistant_id,
-            file_ids=file_ids
-        )
-        return response
+        for file_id in file_ids:
+            client.beta.assistants.files.create(
+                assistant_id=assistant_id,
+                file_id=file_id
+            )
+        return {"message": "Fichiers attachés à l'assistant.", "file_ids": file_ids}
     except Exception as e:
         raise RuntimeError(f"Erreur lors de l'attachement des fichiers à l'assistant : {e}")
