@@ -107,3 +107,15 @@ def get_assistant_info():
         return {"assistant_details": assistant_details}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/delete_assistant/{assistant_id}")
+def delete_assistant(assistant_id: str):
+    """
+    Supprime un assistant OpenAI via son ID.
+    """
+    try:
+        response = remove_assistant(assistant_id)
+        return {"message": f"Assistant {assistant_id} supprimé avec succès.", "response": response}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
