@@ -13,26 +13,22 @@ class DriveFileRequest(BaseModel):
 @router.post("/download_drive_file/")
 def download_google_drive_file(request: DriveFileRequest):
     """
-    Télécharge un fichier depuis Google Drive et retourne le chemin du fichier téléchargé.
+    Télécharge un fichier depuis Google Drive et retourne son nom d'origine et son chemin.
     """
     try:
-        file_id = request.file_id
-        filename = f"{file_id}.pdf"  # Modifier l'extension si besoin
-        file_path = download_drive_file(file_id, filename)
-        return {"message": "Fichier téléchargé avec succès", "file_path": file_path}
+        file_path, filename = download_drive_file(request.file_id)
+        return {"message": "Fichier téléchargé avec succès", "file_name": filename, "file_path": file_path}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/upload_from_drive/")
 def upload_google_drive_file(request: DriveFileRequest):
     """
-    Télécharge un fichier depuis Google Drive et retourne le chemin du fichier téléchargé.
+    Télécharge un fichier depuis Google Drive et retourne son nom d'origine et son chemin.
     """
     try:
-        file_id = request.file_id
-        filename = f"{file_id}.pdf"  # Modifier l'extension si besoin
-        file_path = download_drive_file(file_id, filename)
-        return {"message": "Fichier téléchargé avec succès", "file_path": file_path}
+        file_path, filename = download_drive_file(request.file_id)
+        return {"message": "Fichier téléchargé avec succès", "file_name": filename, "file_path": file_path}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
