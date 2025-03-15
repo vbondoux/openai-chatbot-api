@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 import os
 from app.utils.google_drive import download_drive_file
-from app.utils.openai_rag import upload_file_to_openai, upload_and_attach_files_to_assistant
+from app.utils.openai_rag import upload_file_to_openai, upload_and_attach_files_to_rag
 from app.routes.agent import load_assistant_id
 from pydantic import BaseModel
 from app.config import UPLOADS_DIR
@@ -48,15 +48,15 @@ def list_rag_files():
 @router.post("/upload_to_rag/")
 def upload_local_files_to_openai():
     """
-    Upload tous les fichiers stockés localement dans /uploads vers OpenAI Assistants API et les associe à l'assistant.
+    Upload tous les fichiers stockés localement dans /uploads vers OpenAI Assistants API et les associe à l'assistant via Vector Store.
     """
     try:
         assistant_id = load_assistant_id()
         if not assistant_id:
             raise HTTPException(status_code=400, detail="L'assistant OpenAI n'a pas été créé.")
 
-        # ✅ Nouvelle approche : on envoie tout à OpenAI en une seule fonction
-        response = upload_and_attach_files_to_assistant(assistant_id)
+        # ✅ Correction : Nouvelle approche avec Vector Store
+        response = upload_and_attach_files_to_rag(assistant_id)
 
         return response
 
