@@ -1,10 +1,10 @@
 import os
 from dotenv import load_dotenv
 
-# Charger les variables d'environnement depuis .env si présent (utile en local)
+# Charger .env en local
 load_dotenv()
 
-# Récupérer la clé API depuis les variables d'environnement (Railway ou .env)
+# Récupérer la clé API (Railway ou .env)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 if not OPENAI_API_KEY:
