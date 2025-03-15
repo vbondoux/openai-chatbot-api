@@ -1,8 +1,7 @@
 from fastapi import APIRouter, HTTPException
 import os
 from app.utils.google_drive import download_drive_file
-from app.utils.openai_rag import upload_file_to_openai, upload_and_attach_files_to_rag, attach_files_to_assistant
-
+from app.utils.openai_rag import upload_file_to_openai, upload_and_attach_files_to_rag
 from app.routes.agent import load_assistant_id
 from pydantic import BaseModel
 from app.config import UPLOADS_DIR
@@ -56,19 +55,10 @@ def upload_local_files_to_openai():
         if not assistant_id:
             raise HTTPException(status_code=400, detail="L'assistant OpenAI n'a pas été créé.")
 
-        file_ids = []
-        for filename in os.listdir(UPLOADS_DIR):
-            file_path = os.path.join(UPLOADS_DIR, filename)
-            if os.path.isfile(file_path):
-                openai_file_id = upload_file_to_openai(file_path)
-                file_ids.append(openai_file_id)
+        # ✅ Nouvelle approche : on envoie tout à OpenAI en une seule fonction
+        response = upload_and_attach_files_to_rag(assistant_id)
 
-        if not file_ids:
-            raise HTTPException(status_code=400, detail="Aucun fichier à envoyer à OpenAI.")
-
-        attach_files_to_assistant(assistant_id, file_ids)
-
-        return {"message": "Fichiers envoyés à OpenAI et attachés à l'assistant.", "file_ids": file_ids}
+        return response
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
