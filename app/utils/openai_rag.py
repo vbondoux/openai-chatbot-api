@@ -38,16 +38,13 @@ def upload_file_to_openai(filepath):
         logging.error(f"🚨 Erreur lors de l'upload du fichier vers OpenAI : {e}")
         raise RuntimeError(f"Erreur lors de l'upload du fichier vers OpenAI : {e}")
 
-def create_vector_store(name="Default Vector Store", description="Stockage des fichiers pour l'Assistant OpenAI"):
+def create_vector_store(name="Default Vector Store"):
     """
     Crée un Vector Store dans OpenAI Assistants API.
-    ✅ Correction : Utilisation de `client.vector_stores` au lieu de `client.beta.vector_stores`
+    ✅ Correction : Suppression de l'argument `description`
     """
     try:
-        response = client.vector_stores.create(  # ✅ Correction ici
-            name=name,
-            description=description
-        )
+        response = client.vector_stores.create(name=name)  # ✅ Suppression de `description`
         vector_store_id = response.id
         logging.info(f"✅ Vector Store créé avec succès ! ID : {vector_store_id}")
         return vector_store_id
