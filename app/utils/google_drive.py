@@ -3,11 +3,11 @@ from googleapiclient.http import MediaIoBaseDownload
 from google.oauth2 import service_account
 import io
 import os
-from app.config import GOOGLE_CREDENTIALS_PATH, UPLOADS_DIR  # Importer le bon chemin et le dossier de stockage
+from app.config import GOOGLE_CREDENTIALS_PATH, UPLOADS_DIR
 
-def download_drive_file(file_id, filename):
+def download_drive_file(file_id):
     """
-    Télécharge un fichier depuis Google Drive via son file_id et le stocke dans UPLOADS_DIR.
+    Télécharge un fichier depuis Google Drive via son file_id et conserve son nom d'origine.
     """
     # Vérifier si les credentials existent
     if not GOOGLE_CREDENTIALS_PATH or not os.path.exists(GOOGLE_CREDENTIALS_PATH):
@@ -21,6 +21,10 @@ def download_drive_file(file_id, filename):
 
     # Construire le service Google Drive
     service = build("drive", "v3", credentials=creds)
+
+    # Obtenir le nom du fichier
+    file_metadata = service.files().get(fileId=file_id).execute()
+    filename = file_metadata.get("name", f"{file_id}.pdf")  # Fallback au file_id si aucun nom n'est trouvé
 
     # Récupérer le fichier
     request = service.files().get_media(fileId=file_id)
@@ -37,4 +41,4 @@ def download_drive_file(file_id, filename):
     with open(output_path, "wb") as f:
         f.write(file.getvalue())
 
-    return output_path
+    return output_path, filename
