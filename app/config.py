@@ -17,8 +17,8 @@ GOOGLE_DRIVE_API_KEY = os.getenv("GOOGLE_DRIVE_API_KEY")
 GOOGLE_SERVICE_ACCOUNT_JSON = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
 
 # Vérifier si Railway stocke la clé JSON sous forme de texte et recréer le fichier credentials
+credentials_path = "google_credentials.json"
 if GOOGLE_SERVICE_ACCOUNT_JSON and GOOGLE_SERVICE_ACCOUNT_JSON.startswith("{"):
-    credentials_path = "google_credentials.json"
     with open(credentials_path, "w") as f:
         f.write(GOOGLE_SERVICE_ACCOUNT_JSON)
 else:
@@ -26,3 +26,7 @@ else:
 
 # Exporter le bon chemin pour Google API
 GOOGLE_CREDENTIALS_PATH = credentials_path
+
+# Dossier pour stocker les fichiers téléchargés
+UPLOADS_DIR = "/app/uploads"
+os.makedirs(UPLOADS_DIR, exist_ok=True)
