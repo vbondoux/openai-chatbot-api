@@ -54,7 +54,8 @@ def create_agent():
         assistant = client.beta.assistants.create(
             name="Aide à la Décision Boursière",
             instructions=instructions,
-            model="gpt-4-turbo"
+            model="gpt-4-turbo",
+            tools=[{"type": "file_search"}]  # ✅ Ajout de `file_search` pour utiliser un Vector Store
         )
 
         save_assistant_id(assistant.id)  # Sauvegarde de l'ID
