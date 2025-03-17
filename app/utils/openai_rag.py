@@ -168,11 +168,16 @@ def remove_assistant(assistant_id):
     Supprime un assistant OpenAI et ses ressources associées.
     """
     try:
-        logging.info(f"🗑️ Suppression de l'assistant {assistant_id}...")
+        logging.info(f"🗑️ Tentative de suppression de l'assistant {assistant_id}...")
+
+        # Ajout d'un log pour voir la requête exacte
         response = client.beta.assistants.delete(assistant_id)
+        logging.info(f"✅ Réponse OpenAI : {response}")
+
         logging.info(f"✅ Assistant {assistant_id} supprimé avec succès.")
         return response
     except Exception as e:
         logging.error(f"🚨 Erreur lors de la suppression de l'assistant : {e}")
         raise RuntimeError(f"Erreur lors de la suppression de l'assistant : {e}")
+
 
