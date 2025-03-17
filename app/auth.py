@@ -34,17 +34,15 @@ async def login(request: Request):
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
 # Callback après connexion Google
-@router.get("/auth/callback")
+@router.get("/callback")
 async def auth_callback(request: Request):
     try:
         token = await oauth.google.authorize_access_token(request)
         user_info = await oauth.google.parse_id_token(request, token)
 
-        return {
-            "email": user_info["email"],
-            "name": user_info.get("name", "Utilisateur"),
-            "picture": user_info.get("picture", ""),
-            "token": token["access_token"]
-        }
+        # ✅ Redirection vers le frontend après authentification réussie
+        frontend_url = "https://openai-chatbot-ui-production.up.railway.app/auth-success"
+        return RedirectResponse(url=f"{frontend_url}?token={token['access_token']}")
+
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Échec de l'authentification : {str(e)}")
