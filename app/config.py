@@ -34,20 +34,13 @@ os.makedirs(UPLOADS_DIR, exist_ok=True)
 GOOGLE_DRIVE_FOLDER_ID = os.getenv("GOOGLE_DRIVE_FOLDER_ID", "")
 
 # 🔹 🔥 AJOUT : Google OAuth 2.0 pour l'authentification WebChat 🔥
-GOOGLE_AUTH_JSON = os.getenv("GOOGLE_SERVICE_ACCOUNT_AUTH_JSON")
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 
-if GOOGLE_AUTH_JSON:
-    GOOGLE_AUTH_CONFIG = json.loads(GOOGLE_AUTH_JSON)
+# ✅ On force l'URL correcte de redirection OAuth pour éviter l’erreur
+GOOGLE_REDIRECT_URI = "https://openai-chatbot-api-production.up.railway.app/auth/callback"
 
-    GOOGLE_CLIENT_ID = GOOGLE_AUTH_CONFIG["web"]["client_id"]
-    GOOGLE_CLIENT_SECRET = GOOGLE_AUTH_CONFIG["web"]["client_secret"]
-    GOOGLE_REDIRECT_URI = GOOGLE_AUTH_CONFIG["web"]["redirect_uris"][0]
-    GOOGLE_AUTH_URI = GOOGLE_AUTH_CONFIG["web"]["auth_uri"]
-    GOOGLE_TOKEN_URI = GOOGLE_AUTH_CONFIG["web"]["token_uri"]
-else:
-    GOOGLE_CLIENT_ID = None
-    GOOGLE_CLIENT_SECRET = None
-    GOOGLE_REDIRECT_URI = None
-    GOOGLE_AUTH_URI = None
-    GOOGLE_TOKEN_URI = None
-    print("⚠️ GOOGLE_SERVICE_ACCOUNT_AUTH_JSON non défini !")
+# ✅ On utilise les URL officielles de Google pour éviter "jwks_uri missing"
+GOOGLE_AUTH_URI = "https://accounts.google.com/o/oauth2/auth"
+GOOGLE_TOKEN_URI = "https://oauth2.googleapis.com/token"
+GOOGLE_METADATA_URL = "https://accounts.google.com/.well-known/openid-configuration"
