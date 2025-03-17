@@ -1,15 +1,17 @@
 from fastapi import FastAPI
+from starlette.middleware.sessions import SessionMiddleware
 from app.routes import agent, files, chat
-from app.auth import router as auth_router  # ✅ Ajout du routeur d'authentification
+from app.auth import router as auth_router
 
 app = FastAPI(title="OpenAI Chatbot API")
+
+# ✅ Ajouter le middleware de session (obligatoire pour OAuth)
+app.add_middleware(SessionMiddleware, secret_key="CHANGE_ME_SECRET_KEY")
 
 # Inclure les routes API existantes
 app.include_router(agent.router, prefix="/agent", tags=["Agent"])
 app.include_router(files.router, prefix="/files", tags=["Files"])
 app.include_router(chat.router, prefix="/chat", tags=["Chat"])
-
-# ✅ Inclure le routeur d'authentification avec le bon préfixe
 app.include_router(auth_router, prefix="/auth", tags=["Auth"])
 
 @app.get("/")
