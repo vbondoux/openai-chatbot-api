@@ -3,7 +3,7 @@ from googleapiclient.http import MediaIoBaseDownload
 from google.oauth2 import service_account
 import io
 import os
-from app.config import GOOGLE_CREDENTIALS_PATH, UPLOADS_DIR
+from app.config import GOOGLE_CREDENTIALS_PATH, UPLOADS_DIR,GOOGLE_DRIVE_FOLDER_ID
 
 def download_drive_file(file_id):
     """
@@ -43,10 +43,9 @@ def download_drive_file(file_id):
 
     return output_path, filename
 
-
 def list_drive_files():
     """
-    Liste tous les fichiers disponibles sur le Google Drive associé.
+    Liste tous les fichiers disponibles dans un dossier spécifique de Google Drive.
     """
     # Vérifier les credentials
     if not GOOGLE_CREDENTIALS_PATH or not os.path.exists(GOOGLE_CREDENTIALS_PATH):
@@ -60,18 +59,23 @@ def list_drive_files():
 
     service = build("drive", "v3", credentials=creds)
 
-    # Récupération des fichiers
-    results = service.files().list(fields="files(id, name)").execute()
+    # Vérifier si l'ID du dossier est bien défini
+    if not GOOGLE_DRIVE_FOLDER_ID:
+        raise ValueError("❌ Aucun dossier Google Drive spécifié dans Railway.")
+
+    # Filtrer les fichiers par dossier
+    query = f"'{GOOGLE_DRIVE_FOLDER_ID}' in parents and trashed=false"
+    results = service.files().list(q=query, fields="files(id, name)").execute()
     files = results.get("files", [])
 
     return [{"id": file["id"], "name": file["name"]} for file in files]
-
+    
 def download_missing_drive_files():
     """
     Télécharge uniquement les fichiers qui ne sont pas déjà présents dans le dossier UPLOADS_DIR.
     """
     try:
-        drive_files = list_drive_files()  # Liste des fichiers Drive
+        drive_files = list_drive_files()  # Liste des fichiers du dossier Drive
         local_files = set(os.listdir(UPLOADS_DIR))  # Liste des fichiers déjà téléchargés
 
         downloaded_files = []
@@ -82,7 +86,7 @@ def download_missing_drive_files():
             file_id = file["id"]
 
             if file_name in local_files:
-                skipped_files.append(file_name)  # Fichier déjà présent, on ne le télécharge pas
+                skipped_files.append(file_name)  # Fichier déjà présent
             else:
                 file_path, _ = download_drive_file(file_id)  # Téléchargement
                 downloaded_files.append(file_name)
