@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 import os
 from app.utils.google_drive import download_drive_file
 from app.utils.openai_rag import (
+    upload_file_to_openai, 
     upload_and_attach_files_to_rag, 
     list_assistants, 
     list_vector_store_files, 
