@@ -30,7 +30,7 @@ oauth.register(
 # Route pour lancer l’authentification Google
 @router.get("/login")
 async def login(request: Request):
-    redirect_uri = request.url_for("auth_callback")
+    redirect_uri = GOOGLE_REDIRECT_URI  # 🔥 Utilise directement l'URL configurée
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
 # Callback après connexion Google
