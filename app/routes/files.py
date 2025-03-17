@@ -124,7 +124,7 @@ def delete_assistant(assistant_id: str):
 @router.get("/list_drive_files/")
 def get_drive_files():
     """
-    Récupère la liste des fichiers disponibles sur Google Drive.
+    Récupère la liste des fichiers disponibles dans un dossier spécifique de Google Drive.
     """
     try:
         drive_files = list_drive_files()
@@ -135,7 +135,7 @@ def get_drive_files():
 @router.post("/upload_all_from_drive/")
 def upload_all_drive_files():
     """
-    Télécharge tous les fichiers depuis Google Drive vers le stockage local sur Railway,
+    Télécharge tous les fichiers depuis un dossier Google Drive vers le stockage local sur Railway,
     en évitant les fichiers déjà présents.
     """
     try:
@@ -143,4 +143,3 @@ def upload_all_drive_files():
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
