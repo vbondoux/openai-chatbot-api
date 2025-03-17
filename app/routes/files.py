@@ -111,10 +111,8 @@ def delete_assistant(assistant_id: str):
     Supprime un assistant OpenAI via son ID.
     """
     try:
-        logging.info(f"🔍 Suppression demandée pour assistant {assistant_id}")
-        
+       
         response = remove_assistant(assistant_id)
-        os.remove("assistant_data.json")  # ✅ Suppression du fichier d'ID après suppression
         return {"message": f"✅ Assistant {assistant_id} supprimé avec succès.", "response": response}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
