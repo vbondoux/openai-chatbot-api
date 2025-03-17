@@ -1,12 +1,16 @@
 from fastapi import FastAPI
 from app.routes import agent, files, chat
+from app.auth import router as auth_router  # ✅ Ajout du routeur d'authentification
 
 app = FastAPI(title="OpenAI Chatbot API")
 
-# Inclure les routes (vont être définies dans les fichiers correspondants)
+# Inclure les routes API existantes
 app.include_router(agent.router, prefix="/agent", tags=["Agent"])
 app.include_router(files.router, prefix="/files", tags=["Files"])
 app.include_router(chat.router, prefix="/chat", tags=["Chat"])
+
+# ✅ Inclure le routeur d'authentification avec le bon préfixe
+app.include_router(auth_router, prefix="/auth", tags=["Auth"])
 
 @app.get("/")
 def read_root():
