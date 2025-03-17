@@ -66,3 +66,29 @@ def list_drive_files():
 
     return [{"id": file["id"], "name": file["name"]} for file in files]
 
+def download_missing_drive_files():
+    """
+    Télécharge uniquement les fichiers qui ne sont pas déjà présents dans le dossier UPLOADS_DIR.
+    """
+    try:
+        drive_files = list_drive_files()  # Liste des fichiers Drive
+        local_files = set(os.listdir(UPLOADS_DIR))  # Liste des fichiers déjà téléchargés
+
+        downloaded_files = []
+        skipped_files = []
+
+        for file in drive_files:
+            file_name = file["name"]
+            file_id = file["id"]
+
+            if file_name in local_files:
+                skipped_files.append(file_name)  # Fichier déjà présent, on ne le télécharge pas
+            else:
+                file_path, _ = download_drive_file(file_id)  # Téléchargement
+                downloaded_files.append(file_name)
+
+        return {"downloaded": downloaded_files, "skipped": skipped_files}
+    except Exception as e:
+        raise RuntimeError(f"🚨 Erreur lors du téléchargement des fichiers : {e}")
+
+
