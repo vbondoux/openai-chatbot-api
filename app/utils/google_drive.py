@@ -42,3 +42,27 @@ def download_drive_file(file_id):
         f.write(file.getvalue())
 
     return output_path, filename
+
+
+def list_drive_files():
+    """
+    Liste tous les fichiers disponibles sur le Google Drive associé.
+    """
+    # Vérifier les credentials
+    if not GOOGLE_CREDENTIALS_PATH or not os.path.exists(GOOGLE_CREDENTIALS_PATH):
+        raise FileNotFoundError(f"❌ Fichier credentials introuvable : {GOOGLE_CREDENTIALS_PATH}")
+
+    # Authentification Google Drive
+    creds = service_account.Credentials.from_service_account_file(
+        GOOGLE_CREDENTIALS_PATH,
+        scopes=["https://www.googleapis.com/auth/drive.readonly"],
+    )
+
+    service = build("drive", "v3", credentials=creds)
+
+    # Récupération des fichiers
+    results = service.files().list(fields="files(id, name)").execute()
+    files = results.get("files", [])
+
+    return [{"id": file["id"], "name": file["name"]} for file in files]
+
