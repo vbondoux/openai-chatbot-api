@@ -38,7 +38,16 @@ def upload_google_drive_file(request: DriveFileRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
+@router.get("/list_rag_files/")
+def list_rag_files():
+    """
+    Liste les fichiers disponibles dans la RAG.
+    """
+    try:
+        files = [f for f in os.listdir(UPLOADS_DIR) if os.path.isfile(os.path.join(UPLOADS_DIR, f))]
+        return {"rag_files": files}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/upload_to_rag/")
 def upload_local_files_to_openai():
