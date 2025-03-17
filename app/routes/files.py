@@ -1,6 +1,10 @@
 from fastapi import APIRouter, HTTPException
 import os
-from app.utils.google_drive import download_drive_file
+from app.utils.google_drive import (
+    download_drive_file,
+    list_drive_files,
+    download_missing_drive_files
+)
 from app.utils.openai_rag import (
     upload_file_to_openai, 
     upload_and_attach_files_to_rag, 
@@ -116,3 +120,27 @@ def delete_assistant(assistant_id: str):
         return {"message": f"✅ Assistant {assistant_id} supprimé avec succès.", "response": response}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/list_drive_files/")
+def get_drive_files():
+    """
+    Récupère la liste des fichiers disponibles sur Google Drive.
+    """
+    try:
+        drive_files = list_drive_files()
+        return {"drive_files": drive_files}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/upload_all_from_drive/")
+def upload_all_drive_files():
+    """
+    Télécharge tous les fichiers depuis Google Drive vers le stockage local sur Railway,
+    en évitant les fichiers déjà présents.
+    """
+    try:
+        result = download_missing_drive_files()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
