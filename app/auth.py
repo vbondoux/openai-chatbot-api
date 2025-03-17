@@ -7,31 +7,33 @@ from app.config import (
     GOOGLE_CLIENT_SECRET,
     GOOGLE_REDIRECT_URI,
     GOOGLE_AUTH_URI,
-    GOOGLE_TOKEN_URI
+    GOOGLE_TOKEN_URI,
+    GOOGLE_METADATA_URL
 )
 
 router = APIRouter()
 
 # Vérification si Google OAuth est bien configuré
 if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
-    raise ValueError("❌ Google OAuth non configuré correctement ! Vérifie GOOGLE_SERVICE_ACCOUNT_AUTH_JSON.")
+    raise ValueError("❌ Google OAuth non configuré correctement ! Vérifie GOOGLE_CLIENT_ID et GOOGLE_CLIENT_SECRET.")
 
-# Configuration OAuth
+# ✅ Correction de la configuration OAuth pour éviter l’erreur "jwks_uri missing"
 oauth = OAuth()
 oauth.register(
-    name='google',
+    name="google",
     client_id=GOOGLE_CLIENT_ID,
     client_secret=GOOGLE_CLIENT_SECRET,
-    authorize_url=GOOGLE_AUTH_URI,
-    access_token_url=GOOGLE_TOKEN_URI,
-    client_kwargs={"scope": "openid email profile"},
+    server_metadata_url=GOOGLE_METADATA_URL,  # 🔥 Charge automatiquement toutes les URLs nécessaires
+    client_kwargs={
+        "scope": "openid email profile",
+        "prompt": "consent",  # Force l'affichage de l'autorisation Google
+    }
 )
 
 # Route pour lancer l’authentification Google
 @router.get("/login")
 async def login(request: Request):
-    redirect_uri = GOOGLE_REDIRECT_URI  # 🔥 Utilise directement l'URL configurée
-    return await oauth.google.authorize_redirect(request, redirect_uri)
+    return await oauth.google.authorize_redirect(request, GOOGLE_REDIRECT_URI)
 
 # Callback après connexion Google
 @router.get("/callback")
