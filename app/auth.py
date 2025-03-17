@@ -5,28 +5,25 @@ from starlette.responses import RedirectResponse
 from app.config import (
     GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET,
-    GOOGLE_REDIRECT_URI,
-    GOOGLE_AUTH_URI,
-    GOOGLE_TOKEN_URI,
-    GOOGLE_METADATA_URL
+    GOOGLE_REDIRECT_URI
 )
 
 router = APIRouter()
 
 # Vérification si Google OAuth est bien configuré
 if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
-    raise ValueError("❌ Google OAuth non configuré correctement ! Vérifie GOOGLE_CLIENT_ID et GOOGLE_CLIENT_SECRET.")
+    raise ValueError("❌ Google OAuth non configuré correctement ! Vérifie GOOGLE_SERVICE_ACCOUNT_AUTH_JSON.")
 
-# ✅ Correction de la configuration OAuth pour éviter l’erreur "jwks_uri missing"
+# ✅ Nouvelle configuration OAuth avec `server_metadata_url`
 oauth = OAuth()
 oauth.register(
     name="google",
     client_id=GOOGLE_CLIENT_ID,
     client_secret=GOOGLE_CLIENT_SECRET,
-    server_metadata_url=GOOGLE_METADATA_URL,  # 🔥 Charge automatiquement toutes les URLs nécessaires
+    server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",  # 🔥 Charge automatiquement toutes les URLs Google
     client_kwargs={
         "scope": "openid email profile",
-        "prompt": "consent",  # Force l'affichage de l'autorisation Google
+        "prompt": "consent",  # 🔹 Force l'affichage de l'autorisation Google
     }
 )
 
