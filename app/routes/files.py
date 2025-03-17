@@ -17,6 +17,28 @@ router = APIRouter()
 class DriveFileRequest(BaseModel):
     file_id: str
 
+@router.post("/upload_from_drive/")
+def upload_google_drive_file(request: DriveFileRequest):
+    """
+    Télécharge un fichier depuis Google Drive, l'upload vers OpenAI et retourne les informations.
+    """
+    try:
+        file_path, filename = download_drive_file(request.file_id)
+
+        # On récupère l'ID de l'assistant
+        assistant_id = get_assistant_id()
+        if not assistant_id:
+            raise HTTPException(status_code=400, detail="❌ Aucun assistant trouvé. Créez-en un d'abord !")
+
+        # On upload le fichier sur OpenAI
+        file_id = upload_file_to_openai(file_path)
+
+        return {"message": "Fichier téléchargé et uploadé avec succès", "file_name": filename, "file_id": file_id}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
 @router.post("/upload_to_rag/")
 def upload_local_files_to_openai():
     """
