@@ -30,3 +30,5 @@ GOOGLE_CREDENTIALS_PATH = credentials_path
 # Dossier pour stocker les fichiers téléchargés
 UPLOADS_DIR = "/app/uploads"
 os.makedirs(UPLOADS_DIR, exist_ok=True)
+
+GOOGLE_DRIVE_FOLDER_ID = os.getenv("GOOGLE_DRIVE_FOLDER_ID", "")
