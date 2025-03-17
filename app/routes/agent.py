@@ -9,8 +9,8 @@ router = APIRouter()
 # Fichier où stocker l'ID de l'assistant
 ASSISTANT_DATA_FILE = "assistant_data.json"
 
-def load_assistant_id():
-    """Charge l'ID de l'assistant depuis un fichier JSON."""
+def get_assistant_id():
+    """Retourne l'ID de l'assistant s'il existe, sinon None."""
     if os.path.exists(ASSISTANT_DATA_FILE):
         with open(ASSISTANT_DATA_FILE, "r") as f:
             data = json.load(f)
@@ -28,9 +28,9 @@ def create_agent():
     Crée un agent OpenAI pour l'aide à la décision en bourse, ou retourne l'ID s'il existe déjà.
     """
     try:
-        existing_assistant_id = load_assistant_id()
-        if existing_assistant_id:
-            return {"message": "Assistant déjà créé", "assistant_id": existing_assistant_id}
+        assistant_id = get_assistant_id()
+        if assistant_id:
+            return {"message": "Assistant déjà créé", "assistant_id": assistant_id}
 
         client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
@@ -55,10 +55,10 @@ def create_agent():
             name="Aide à la Décision Boursière",
             instructions=instructions,
             model="gpt-4-turbo",
-            tools=[{"type": "file_search"}]  # ✅ Ajout de `file_search` pour utiliser un Vector Store
+            tools=[{"type": "file_search"}]  # ✅ Activation du support des fichiers RAG
         )
 
-        save_assistant_id(assistant.id)  # Sauvegarde de l'ID
+        save_assistant_id(assistant.id)
         return {"message": "Assistant créé avec succès", "assistant_id": assistant.id}
 
     except Exception as e:
