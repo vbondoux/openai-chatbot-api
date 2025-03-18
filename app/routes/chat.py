@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Body
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Body, Depends
 from pydantic import BaseModel
 import openai
 import os
@@ -25,7 +25,10 @@ async def chat_with_agent(
     Fonctionne avec ou sans fichier attaché.
     """
     try:
-        # Récupération correcte du message
+        # LOG DES DONNÉES REÇUES
+        print(f"✅ Requête reçue : assistant_id={assistant_id}, message={message}, body={body}")
+
+        # Vérification et récupération du message
         if not message and body:
             message = body.message  # Si JSON, on extrait depuis le body
         if not message:
@@ -55,7 +58,7 @@ async def chat_with_agent(
         # Attendre et récupérer la réponse
         response = openai.beta.threads.messages.list(thread_id=thread.id)
 
-        # 🔹 Nouvelle correction : extraire correctement la réponse
+        # Vérification de la réponse OpenAI
         messages = response.get("data", [])
         if not messages:
             raise HTTPException(status_code=500, detail="Aucune réponse de l'assistant.")
@@ -65,4 +68,5 @@ async def chat_with_agent(
         return {"response": reply}
 
     except Exception as e:
+        print(f"❌ ERREUR : {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
