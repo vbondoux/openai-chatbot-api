@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Body, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import openai
 import os
 from app.config import OPENAI_API_KEY
@@ -9,20 +9,20 @@ router = APIRouter()
 # Initialiser OpenAI API
 openai.api_key = OPENAI_API_KEY
 
-# Modèle pour accepter JSON
+# Modèle pour JSON
 class ChatRequest(BaseModel):
-    message: str
+    message: str = Field(..., example="Bonjour, peux-tu m'aider ?")
 
 @router.post("/{assistant_id}")
 async def chat_with_agent(
     assistant_id: str,
-    message: str = Form(None),  # Pour les requêtes `multipart/form-data`
-    file: UploadFile = File(None),  # Fichier optionnel
-    body: ChatRequest = Body(None)  # Pour les requêtes JSON
+    message: str = Form(None),  # Supporte form-data
+    file: UploadFile = File(None),  # Supporte fichiers
+    body: ChatRequest = Body(None)  # Supporte JSON
 ):
     """
     Envoie un message à l'agent OpenAI et retourne la réponse.
-    Fonctionne avec ou sans fichier attaché.
+    Fonctionne avec JSON ou `multipart/form-data`.
     """
     try:
         # LOG DES DONNÉES REÇUES
@@ -30,11 +30,11 @@ async def chat_with_agent(
 
         # Vérification et récupération du message
         if not message and body:
-            message = body.message  # Si JSON, on extrait depuis le body
+            message = body.message  # Extraction depuis JSON
         if not message:
             raise HTTPException(status_code=400, detail="Le message est requis.")
 
-        # Gestion du fichier
+        # Gestion du fichier (optionnel)
         file_info = ""
         if file:
             file_location = f"/tmp/{file.filename}"
