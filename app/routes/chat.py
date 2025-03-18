@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Depends
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Body
 from pydantic import BaseModel
 import openai
 import os
@@ -9,55 +9,59 @@ router = APIRouter()
 # Initialiser OpenAI API
 openai.api_key = OPENAI_API_KEY
 
-# Modèle pour un message JSON simple
+# Modèle pour accepter JSON
 class ChatRequest(BaseModel):
     message: str
 
 @router.post("/{assistant_id}")
 async def chat_with_agent(
     assistant_id: str,
-    message: str = Form(None),  # Accepté si multipart/form-data
-    file: UploadFile = File(None),  # Optionnel
-    body: ChatRequest = None  # Accepté si application/json
+    message: str = Form(None),  # Pour les requêtes `multipart/form-data`
+    file: UploadFile = File(None),  # Fichier optionnel
+    body: ChatRequest = Body(None)  # Pour les requêtes JSON
 ):
     """
     Envoie un message à l'agent OpenAI et retourne la réponse.
     Fonctionne avec ou sans fichier attaché.
     """
-
     try:
-        # Récupération du message selon le format reçu
-        if message is None and body is not None:
-            message = body.message  # Si JSON, récupérer le message
-        
+        # Récupération correcte du message
+        if not message and body:
+            message = body.message  # Si JSON, on extrait depuis le body
         if not message:
             raise HTTPException(status_code=400, detail="Le message est requis.")
 
-        # Vérifier si un fichier est envoyé
+        # Gestion du fichier
         file_info = ""
         if file:
             file_location = f"/tmp/{file.filename}"
             with open(file_location, "wb") as buffer:
                 buffer.write(await file.read())
-            file_info = f"[Fichier joint: {file.filename}]"
+            file_info = f"[Fichier reçu: {file.filename}]"
 
-        # Création d’un thread avec l’agent OpenAI
+        # Création d'un thread OpenAI
         thread = openai.beta.threads.create(
             messages=[
                 {"role": "user", "content": f"{file_info} {message}"}
             ]
         )
 
-        # Exécuter l'assistant pour obtenir une réponse
+        # Exécuter l'assistant
         run = openai.beta.threads.runs.create(
             thread_id=thread.id,
             assistant_id=assistant_id
         )
 
-        # Récupérer la réponse
+        # Attendre et récupérer la réponse
         response = openai.beta.threads.messages.list(thread_id=thread.id)
-        reply = response["data"][0]["content"]
 
+        # 🔹 Nouvelle correction : extraire correctement la réponse
+        messages = response.get("data", [])
+        if not messages:
+            raise HTTPException(status_code=500, detail="Aucune réponse de l'assistant.")
+        
+        reply = messages[0].get("content", "Réponse introuvable.")
+        
         return {"response": reply}
 
     except Exception as e:
