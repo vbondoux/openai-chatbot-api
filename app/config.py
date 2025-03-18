@@ -33,7 +33,7 @@ os.makedirs(UPLOADS_DIR, exist_ok=True)
 
 GOOGLE_DRIVE_FOLDER_ID = os.getenv("GOOGLE_DRIVE_FOLDER_ID", "")
 
-# 🔹 🔥 Google OAuth 2.0 pour l'authentification WebChat 🔥
+# 🔹 🔥 Google OAuth 2.0 (Désactivé temporairement)
 GOOGLE_AUTH_JSON = os.getenv("GOOGLE_SERVICE_ACCOUNT_AUTH_JSON")
 
 if GOOGLE_AUTH_JSON:
@@ -46,4 +46,4 @@ else:
     GOOGLE_CLIENT_ID = None
     GOOGLE_CLIENT_SECRET = None
     GOOGLE_REDIRECT_URI = None
-    print("⚠️ GOOGLE_SERVICE_ACCOUNT_AUTH_JSON non défini !")
+    print("⚠️ Google OAuth désactivé temporairement.")
