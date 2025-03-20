@@ -39,15 +39,22 @@ async def chat_with_agent(
             assistant_id=assistant_id
         )
 
-        # Étape 4 : Récupérer la réponse générée
-        response = client.beta.threads.messages.list(thread_id=thread.id)
+        # **IMPORTANT** : Attendre que le run soit terminé avant de récupérer les messages
+        import time
+        while True:
+            run_status = client.beta.threads.runs.retrieve(run.id)
+            if run_status.status == "completed":
+                break
+            time.sleep(1)  # Attendre 1 seconde avant de re-vérifier
 
-        # Vérifier la réponse d'OpenAI
-        messages = response.get("data", [])
-        if not messages:
-            raise HTTPException(status_code=500, detail="Aucune réponse de l'assistant.")
-        
-        reply = messages[0].get("content", "Réponse introuvable.")
+        # Étape 4 : Récupérer la réponse générée
+        response_messages = client.beta.threads.messages.list(thread_id=thread.id)
+
+        # Extraire le dernier message
+        if response_messages and len(response_messages.data) > 0:
+            reply = response_messages.data[0].content[0].text.value  # 🔥 CORRECTION ICI 🔥
+        else:
+            reply = "Aucune réponse de l'assistant."
 
         return {"response": reply}
 
