@@ -6,10 +6,10 @@ from app.config import OPENAI_API_KEY
 
 router = APIRouter()
 
-# Initialiser OpenAI API
+# Initialisation du client OpenAI
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
-# Modèle pour JSON
+# Modèle Pydantic pour les requêtes JSON
 class ChatRequest(BaseModel):
     message: str = Field(..., example="Bonjour, peux-tu m'aider ?")
 
@@ -19,7 +19,7 @@ async def start_chat_with_agent(
     body: ChatRequest = Body(...)
 ):
     """
-    Démarre une conversation avec l'assistant et retourne immédiatement le run_id.
+    Démarre une conversation avec l'assistant et retourne immédiatement le thread_id et le run_id.
     """
     try:
         print(f"✅ Requête reçue : assistant_id={assistant_id}, message={body.message}")
@@ -46,12 +46,12 @@ async def start_chat_with_agent(
             assistant_id=assistant.id
         )
 
-        # **Ne pas attendre ici ! Retourner le thread_id et run_id immédiatement**
+        # Retourner immédiatement les identifiants pour éviter les timeout
         return {"thread_id": thread.id, "run_id": run.id}
 
     except Exception as e:
         print(f"❌ ERREUR : {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e)})
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/{thread_id}/status")
 async def get_chat_status(thread_id: str):
@@ -59,7 +59,7 @@ async def get_chat_status(thread_id: str):
     Vérifie le statut du run en cours pour un thread donné.
     """
     try:
-        # Récupérer tous les runs liés au thread
+        # Récupérer les runs associés au thread
         runs = client.beta.threads.runs.list(thread_id=thread_id)
 
         if not runs.data:
@@ -71,7 +71,7 @@ async def get_chat_status(thread_id: str):
 
     except Exception as e:
         print(f"❌ ERREUR : {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e)})
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/{thread_id}/response")
 async def get_chat_response(thread_id: str):
@@ -89,7 +89,7 @@ async def get_chat_response(thread_id: str):
 
         # Extraire le dernier message de l'assistant
         if response_messages.data:
-            reply = response_messages.data[-1].content[0].text.value  # 🔥 Correction ici 🔥
+            reply = response_messages.data[-1].content[0].text.value  # ✅ Correction ici
         else:
             reply = "Aucune réponse de l'assistant."
 
@@ -97,4 +97,4 @@ async def get_chat_response(thread_id: str):
 
     except Exception as e:
         print(f"❌ ERREUR : {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e)})
+        raise HTTPException(status_code=500, detail=str(e))
