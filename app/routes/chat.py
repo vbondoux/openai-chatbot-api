@@ -6,7 +6,7 @@ from app.config import OPENAI_API_KEY
 router = APIRouter()
 
 # Initialiser OpenAI API
-openai.api_key = OPENAI_API_KEY
+client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 # Modèle pour JSON
 class ChatRequest(BaseModel):
@@ -23,8 +23,16 @@ async def chat_with_agent(
     try:
         print(f"✅ Requête reçue : assistant_id={assistant_id}, message={body.message}")
 
-        # Simulation de réponse
-        return {"response": f"Message bien reçu : {body.message}"}
+        # Envoyer le message à OpenAI
+        response = client.beta.threads.messages.create(
+            assistant_id=assistant_id,
+            messages=[{"role": "user", "content": body.message}]
+        )
+
+        # Extraire la réponse d'OpenAI
+        reply = response.choices[0].message["content"]
+
+        return {"response": reply}
 
     except Exception as e:
         print(f"❌ ERREUR : {str(e)}")
