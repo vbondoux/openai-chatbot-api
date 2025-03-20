@@ -13,57 +13,88 @@ client = openai.OpenAI(api_key=OPENAI_API_KEY)
 class ChatRequest(BaseModel):
     message: str = Field(..., example="Bonjour, peux-tu m'aider ?")
 
-@router.post("/{assistant_id}")
-async def chat_with_agent(
+@router.post("/{assistant_id}/start")
+async def start_chat_with_agent(
     assistant_id: str,
     body: ChatRequest = Body(...)
 ):
     """
-    Envoie un message à l'agent OpenAI et retourne la réponse.
+    Démarre une conversation avec l'assistant et retourne immédiatement le run_id.
     """
     try:
         print(f"✅ Requête reçue : assistant_id={assistant_id}, message={body.message}")
 
-        # Étape 1 : Vérifier que l'assistant existe déjà
+        # Vérifier que l'assistant existe
         try:
             assistant = client.beta.assistants.retrieve(assistant_id)
         except Exception as e:
             raise HTTPException(status_code=404, detail=f"Assistant non trouvé : {str(e)}")
 
-        # Étape 2 : Créer un thread pour la conversation
+        # Créer un thread pour la conversation
         thread = client.beta.threads.create()
 
-        # Étape 3 : Envoyer le message utilisateur dans le thread
+        # Ajouter le message utilisateur
         client.beta.threads.messages.create(
             thread_id=thread.id,
             role="user",
             content=body.message
         )
 
-        # Étape 4 : Exécuter l'assistant sur ce thread
+        # Démarrer l'exécution de l'assistant
         run = client.beta.threads.runs.create(
             thread_id=thread.id,
             assistant_id=assistant.id
         )
 
-        # **Étape 5 : Attendre que le run soit terminé**
-        while True:
-            run_status = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)  # ✅ Correction ici ✅
-            if run_status.status == "completed":
-                break
-            time.sleep(1)  # Attendre 1 seconde avant de re-vérifier
+        # **Ne pas attendre ici ! Retourner le thread_id et run_id immédiatement**
+        return {"thread_id": thread.id, "run_id": run.id}
 
-        # Étape 6 : Récupérer la réponse générée
-        response_messages = client.beta.threads.messages.list(thread_id=thread.id)
+    except Exception as e:
+        print(f"❌ ERREUR : {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e)})
 
-        # **Récupération correcte de la réponse**
+@router.get("/{thread_id}/status")
+async def get_chat_status(thread_id: str):
+    """
+    Vérifie le statut du run en cours pour un thread donné.
+    """
+    try:
+        # Récupérer tous les runs liés au thread
+        runs = client.beta.threads.runs.list(thread_id=thread_id)
+
+        if not runs.data:
+            raise HTTPException(status_code=404, detail="Aucun run trouvé pour ce thread.")
+
+        last_run = runs.data[0]  # Prendre le dernier run en cours
+
+        return {"status": last_run.status}
+
+    except Exception as e:
+        print(f"❌ ERREUR : {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e)})
+
+@router.get("/{thread_id}/response")
+async def get_chat_response(thread_id: str):
+    """
+    Récupère la réponse de l'assistant une fois le run terminé.
+    """
+    try:
+        # Vérifier si le run est terminé
+        runs = client.beta.threads.runs.list(thread_id=thread_id)
+        if not runs.data or runs.data[0].status != "completed":
+            return {"status": "in_progress", "message": "Le run est encore en cours, réessayez plus tard."}
+
+        # Récupérer les messages
+        response_messages = client.beta.threads.messages.list(thread_id=thread_id)
+
+        # Extraire le dernier message de l'assistant
         if response_messages.data:
             reply = response_messages.data[-1].content[0].text.value  # 🔥 Correction ici 🔥
         else:
             reply = "Aucune réponse de l'assistant."
 
-        return {"response": reply}
+        return {"status": "completed", "response": reply}
 
     except Exception as e:
         print(f"❌ ERREUR : {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)})
