@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException, Body
 from pydantic import BaseModel, Field
 import openai
-import time
 from app.config import OPENAI_API_KEY
 
 router = APIRouter()
@@ -46,7 +45,6 @@ async def start_chat_with_agent(
             assistant_id=assistant.id
         )
 
-        # Retourner immédiatement les identifiants pour éviter les timeout
         return {"thread_id": thread.id, "run_id": run.id}
 
     except Exception as e:
@@ -59,13 +57,12 @@ async def get_chat_status(thread_id: str):
     Vérifie le statut du run en cours pour un thread donné.
     """
     try:
-        # Récupérer les runs associés au thread
         runs = client.beta.threads.runs.list(thread_id=thread_id)
 
         if not runs.data:
             raise HTTPException(status_code=404, detail="Aucun run trouvé pour ce thread.")
 
-        last_run = runs.data[0]  # Prendre le dernier run en cours
+        last_run = runs.data[0]
 
         return {"status": last_run.status}
 
@@ -79,17 +76,17 @@ async def get_chat_response(thread_id: str):
     Récupère la réponse de l'assistant une fois le run terminé.
     """
     try:
-        # Vérifier si le run est terminé
         runs = client.beta.threads.runs.list(thread_id=thread_id)
         if not runs.data or runs.data[0].status != "completed":
             return {"status": "in_progress", "message": "Le run est encore en cours, réessayez plus tard."}
 
-        # Récupérer les messages
         response_messages = client.beta.threads.messages.list(thread_id=thread_id)
 
-        # Extraire le dernier message de l'assistant
-        if response_messages.data:
-            reply = response_messages.data[-1].content[0].text.value  # ✅ Correction ici
+        # ✅ Corrigé : extraire le dernier message de l'assistant uniquement
+        for msg in reversed(response_messages.data):
+            if msg.role == "assistant":
+                reply = msg.content[0].text.value
+                break
         else:
             reply = "Aucune réponse de l'assistant."
 
