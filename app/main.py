@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from starlette.middleware.sessions import SessionMiddleware
-from app.routes import agent, files, chat
+from app.routes import agent, files, chat, ctrader_auth
 from app.auth import router as auth_router
 
 app = FastAPI(title="OpenAI Chatbot API")
@@ -13,6 +13,7 @@ app.include_router(agent.router, prefix="/agent", tags=["Agent"])
 app.include_router(files.router, prefix="/files", tags=["Files"])
 app.include_router(chat.router, prefix="/chat", tags=["Chat"])
 app.include_router(auth_router, prefix="/auth", tags=["Auth"])
+app.include_router(ctrader_auth.router, prefix="/ctrader_auth", tags=["ctrader_auth"])
 
 @app.get("/")
 def read_root():
