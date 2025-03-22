@@ -55,7 +55,8 @@ def create_agent():
             name="Aide à la Décision Boursière",
             instructions=instructions,
             model="gpt-4-turbo",
-            tools=[{"type": "file_search"}]  # ✅ Activation du support des fichiers RAG
+            {"type": "retrieval"},
+            {"type": "file_search"}] 
         )
 
         save_assistant_id(assistant.id)
