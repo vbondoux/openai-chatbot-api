@@ -53,7 +53,6 @@ def create_agent():
             instructions=instructions,
             model="gpt-4-turbo",
             tools=[
-                {"type": "retrieval"},
                 {"type": "file_search"}
             ]
         )
