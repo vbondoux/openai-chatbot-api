@@ -6,11 +6,9 @@ from app.config import OPENAI_API_KEY
 
 router = APIRouter()
 
-# Fichier où stocker l'ID de l'assistant
 ASSISTANT_DATA_FILE = "assistant_data.json"
 
 def get_assistant_id():
-    """Retourne l'ID de l'assistant s'il existe, sinon None."""
     if os.path.exists(ASSISTANT_DATA_FILE):
         with open(ASSISTANT_DATA_FILE, "r") as f:
             data = json.load(f)
@@ -18,7 +16,6 @@ def get_assistant_id():
     return None
 
 def save_assistant_id(assistant_id):
-    """Sauvegarde l'ID de l'assistant dans un fichier JSON."""
     with open(ASSISTANT_DATA_FILE, "w") as f:
         json.dump({"assistant_id": assistant_id}, f)
 
@@ -55,8 +52,10 @@ def create_agent():
             name="Aide à la Décision Boursière",
             instructions=instructions,
             model="gpt-4-turbo",
-            {"type": "retrieval"},
-            {"type": "file_search"}] 
+            tools=[
+                {"type": "retrieval"},
+                {"type": "file_search"}
+            ]
         )
 
         save_assistant_id(assistant.id)
